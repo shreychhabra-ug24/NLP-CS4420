@@ -10,10 +10,7 @@ def pos_tag_text(text):
     pos_tags = [(token.text, token.pos_) for token in doc]
     return pos_tags
 
-# Apply POS tagging to the "Text" column
 df["POS_Tags"] = df["Text"].apply(pos_tag_text)
-
-# Save the new DataFrame
 df.to_csv("ozempic_news_pos.csv", index=False)
 
 print("POS tagging complete. Results saved to ozempic_news_pos.csv")
