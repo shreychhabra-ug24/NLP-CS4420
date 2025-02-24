@@ -10,7 +10,7 @@ def entity_resolution(entities):
     resolved = {}
 
     for entity in entities:
-        if not resolved:  # First entity, add it directly
+        if not resolved:  #first entity, add directly
             resolved[entity] = entity
             continue
         
@@ -22,10 +22,10 @@ def entity_resolution(entities):
 
         best_match, score = match
 
-        if score > 90:  # Adjust threshold as needed
+        if score > 90:
             resolved[entity] = best_match
         else:
-            resolved[entity] = entity  # No close match, keep as new entry
+            resolved[entity] = entity  
 
     return resolved
 
@@ -35,8 +35,8 @@ def extract_entities(text):
 
 df = pd.read_csv("ozempic_news_ner.csv")  
 
-#15 articles for er
-df_sample = df.head(15).copy()
+#150 articles for er
+df_sample = df.head(150).copy()
 df_sample["entities"] = df_sample["Text"].apply(extract_entities)
 
 # Flatten list of all entities and apply er
@@ -44,6 +44,6 @@ all_entities = [entity for sublist in df_sample["entities"] for entity in sublis
 resolved_entities = entity_resolution(all_entities)
 
 df_sample["resolved_entities"] = df_sample["entities"].apply(lambda ents: [resolved_entities.get(ent, ent) for ent in ents])
-df_sample.to_csv("resolved_entities_sample.csv", index=False)
+df_sample.to_csv("results.csv", index=False)
 
-print("Entity Resolution completed on 15 articles and saved to 'resolved_entities_sample.csv'.")
+print("Entity Resolution completed on 150 articles and saved to 'results.csv'.")

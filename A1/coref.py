@@ -1,12 +1,15 @@
 import pandas as pd
 from stanza.server import CoreNLPClient
+import json  
 
-#using a neural model instead of the statistical standard model for better accuracy
-client = CoreNLPClient(annotators=["tokenize", "ssplit", "pos", "lemma", "ner", "parse", "coref"], properties={'coref.algorithm': 'neural'}, timeout=600000, memory="8G")
+#stanza neural coref with corenlp
+client = CoreNLPClient(annotators=["tokenize", "ssplit", "pos", "lemma", "ner", "parse", "coref"], 
+                       properties={'coref.algorithm': 'neural'}, 
+                       timeout=600000, memory="8G")
 
 def resolve_coreferences(text):
     if not isinstance(text, str) or text.strip() == "":
-        return text  # Skip empty or non-string values
+        return text  #skips empty or non-string values
 
     ann = client.annotate(text)
     
@@ -14,12 +17,10 @@ def resolve_coreferences(text):
     coref_chains = {}
     for chain in ann.corefChain:
         representative = chain.mention[0]
-        rep_text = text.split()[representative.beginIndex:representative.endIndex]
-        rep_text = " ".join(rep_text)
+        rep_text = " ".join(text.split()[representative.beginIndex:representative.endIndex])
 
-        for mention in chain.mention[1:]:  # Skip the representative
-            mention_text = text.split()[mention.beginIndex:mention.endIndex]
-            mention_text = " ".join(mention_text)
+        for mention in chain.mention[1:]:  #skip the representative
+            mention_text = " ".join(text.split()[mention.beginIndex:mention.endIndex])
             coref_chains[mention_text] = rep_text
 
     #replaces mentions with representative names
@@ -27,15 +28,12 @@ def resolve_coreferences(text):
     for mention, rep in coref_chains.items():
         resolved_text = resolved_text.replace(mention, rep)
 
-    return resolved_text
-
+    return resolved_text, json.dumps(coref_chains)  # Return both resolved text & coref chains
 
 df = pd.read_csv("ozempic_news_150.csv")  
 
-# Apply coreference resolution
-df["resolved_text"] = df["Text"].apply(resolve_coreferences)
+#coref
+df[["resolved_text", "coref_chains"]] = df["Text"].apply(lambda text: pd.Series(resolve_coreferences(text)))
+df.to_csv("ozempic_neural_coref_with_chains.csv", index=False)
 
-# Save the updated DataFrame
-df.to_csv("ozempic_neural_coref.csv", index=False)
-
-print("Coreference resolution completed and stored in 'resolved_text' column.")
+print("Coreference resolution completed and stored in 'resolved_text' and 'coref_chains' columns.")
